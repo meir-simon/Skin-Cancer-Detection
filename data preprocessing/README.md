@@ -1,0 +1,9 @@
+# this folder contains code to preprocessing the data
+
+## feel free to add your own script and its description
+### normalization
+### hanle categorical features
+### split to train and validation
+### undersampling
+
+
