@@ -2,7 +2,7 @@
 
 ## feel free to add your own script and its description
 ### normalization
-### hanle categorical features
+### handle categorical features
 ### split to train and validation
 ### undersampling
 
