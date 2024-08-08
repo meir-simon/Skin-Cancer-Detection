@@ -3,7 +3,7 @@
 ## feel free to add your own script and its description
 ### normalization
 ### handle categorical features
-### split to train and validation
+### split to train and validation - find in split.py.
 ### undersampling
 
 
