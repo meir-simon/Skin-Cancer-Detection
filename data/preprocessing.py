@@ -4,6 +4,7 @@ from imblearn.under_sampling import NearMiss
 from imblearn.under_sampling import ClusterCentroids
 from imblearn.under_sampling import RandomUnderSampler
 from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import OneHotEncoder
 
 def split_by_patients(train_data_frame, target_column='target', patient_column='patient_id', train_size=0.85, drop_columns=True):
     '''
@@ -80,8 +81,7 @@ def random_undersampling(x_train, y_train, sampling_strategy: dict):
     new_x_train, new_y_train = undersample.fit_resample(x_train, y_train)
     return new_x_train, new_y_train
 #encode categorical features
-from sklearn.preprocessing import OneHotEncoder
-import pandas as pd
+
 
 def encode_and_concat(df, encoder, column_name):
     """
