@@ -177,7 +177,6 @@ def ordinal_encoding(df, ordinal_features, value_mappings=None):
     
     return df, value_mappings
 
-
 # ordinal_columns = list()
 # train_data, value_mappings = ordinal_encoding(train_data, ordinal_columns)
 # valid_data, _ = ordinal_encoding(valid_data, ordinal_columns, value_mappings)
