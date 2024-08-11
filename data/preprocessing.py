@@ -1,5 +1,9 @@
 import pandas as pd
 from sklearn.model_selection import GroupShuffleSplit
+from imblearn.under_sampling import NearMiss
+from imblearn.under_sampling import ClusterCentroids
+from imblearn.under_sampling import RandomUnderSampler
+from sklearn.preprocessing import StandardScaler
 
 def split_by_patients(train_data_frame, target_column='target', patient_column='patient_id', train_size=0.85, drop_columns=True):
     '''
@@ -33,9 +37,7 @@ def split_by_patients(train_data_frame, target_column='target', patient_column='
 
     return x_train, y_train, x_test, y_test
 
-from imblearn.under_sampling import NearMiss
-from imblearn.under_sampling import ClusterCentroids
-from imblearn.under_sampling import RandomUnderSampler
+
 
 # Function for Near Miss under sampling
 def near_miss_undersampling(x_train, y_train, sampling_strategy: dict):
@@ -181,7 +183,7 @@ def ordinal_encoding(df, ordinal_features, value_mappings=None):
 # valid_data, _ = ordinal_encoding(valid_data, ordinal_columns, value_mappings)
 # test_data, _ = ordinal_encoding(test_data, ordinal_columns, value_mappings)
 
-from sklearn.preprocessing import StandardScaler
+
 def normalize_data(train_df, valid_df, test_df, numerical_features):
     scaler = StandardScaler()
     
