@@ -83,8 +83,6 @@ def random_undersampling(x_train, y_train, sampling_strategy: dict):
 
 
 #encode categorical features
-from sklearn.preprocessing import OneHotEncoder
-
 def encode_and_concat(df, encoder, column_name):
     """
     Encodes a categorical column using OneHotEncoder and concatenates the encoded columns to the original DataFrame.
