@@ -4,6 +4,8 @@ from imblearn.under_sampling import NearMiss
 from imblearn.under_sampling import ClusterCentroids
 from imblearn.under_sampling import RandomUnderSampler
 from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import OneHotEncoder
+
 
 def split_by_patients(train_data_frame, target_column='target', patient_column='patient_id', train_size=0.85, drop_columns=True):
     '''
@@ -36,7 +38,6 @@ def split_by_patients(train_data_frame, target_column='target', patient_column='
     print(f'Positives cases split: {train_positive_cases * 100 / original_positive_cases}, {100 - (train_positive_cases * 100 / original_positive_cases)}')
 
     return x_train, y_train, x_test, y_test
-
 
 
 # Function for Near Miss under sampling
@@ -79,9 +80,10 @@ def random_undersampling(x_train, y_train, sampling_strategy: dict):
     undersample = RandomUnderSampler(random_state=42, sampling_strategy = sampling_strategy)
     new_x_train, new_y_train = undersample.fit_resample(x_train, y_train)
     return new_x_train, new_y_train
+
+
 #encode categorical features
 from sklearn.preprocessing import OneHotEncoder
-import pandas as pd
 
 def encode_and_concat(df, encoder, column_name):
     """
@@ -99,6 +101,7 @@ def encode_and_concat(df, encoder, column_name):
     updated_df = pd.concat([df, encoded_df], axis=1).drop(columns=[column_name])
     return updated_df, new_columns
 
+
 def add_column(df, name, fill):
     """
     Adds a new column to the DataFrame with a specified name and fill value.
@@ -111,6 +114,7 @@ def add_column(df, name, fill):
     df[name] = fill
     return df
 
+
 def sort_df(df, sort_function=lambda x: x):
     """
     Sorts the columns of a DataFrame according to a given sorting function.
@@ -121,6 +125,7 @@ def sort_df(df, sort_function=lambda x: x):
     """
     sorted_columns = sorted(df.columns, key=sort_function)
     return df[sorted_columns]
+
 
 def encode_and_fill_categorical_columns(*dfs, categorical_columns):
     """
@@ -154,6 +159,7 @@ def encode_and_fill_categorical_columns(*dfs, categorical_columns):
 # all_dfs, encoded_columns = encode_and_fill_categorical_columns(train_data, test_data, valid_data,
 #                                                                categorical_columns=categorical_columns_to_one_hot)
 # train_data, test_data, valid_data = all_dfs
+
 
 # המרת ערכים לפי חשיבות לסדר
 def ordinal_encoding(df, ordinal_features, value_mappings=None):
