@@ -207,3 +207,81 @@ def normalize_data(train_df, valid_df, test_df, numerical_features):
 # numerical_columns = ['An array of numeric columns or categories converted to numeric']
 
 # train_data, valid_data, test_data = normalize_data(train_data, valid_data, test_data, numerical_columns)
+
+import pandas as pd
+import os.path
+from imblearn.under_sampling import RandomUnderSampler
+from sklearn.model_selection import GroupShuffleSplit
+import torch
+
+
+def initialize_dataset_10k_0(CSV_PATH):
+    '''
+    return two data frames with 10k target == 0, and all the target == 1.
+    train have 3/4 target == 1, and 1/4 in the val_df. each patients
+    :param CSV_PATH: path to the csv (train)
+    :return: (df, df); train and val
+    '''
+
+    # reading dataset
+    ISIC_df = pd.read_csv(CSV_PATH)
+    ISIC_df = ISIC_df[["isic_id", "patient_id", "target"]]
+    ISIC_df["img_path"] = ISIC_df["isic_id"].apply(lambda id: f"{os.path.join(IMG_DIR, id)}.jpg")
+    ISIC_df.drop(["isic_id"], axis=1, inplace=True)
+
+    # splitting into target == 1 and target == 0
+    target_df = ISIC_df[ISIC_df["target"] == 1].reset_index(drop=True)
+    untarget_df = ISIC_df[ISIC_df["target"] == 0].reset_index(drop=True)
+
+    def split_according_patients(df, train_size, drop_patients=True):
+        X, y, groups = df, df["target"], df["patient_id"]
+
+        gss = GroupShuffleSplit(n_splits=1, train_size=train_size, random_state=42)
+        gss_gen = gss.split(X, y, groups)
+        train_index, val_index = next(gss_gen)
+        if drop_patients:
+            train_df = df.loc[train_index, ["img_path", "target"]].reset_index(drop=True)
+            val_df = df.loc[val_index, ["img_path", "target"]].reset_index(drop=True)
+        else:
+            train_df = df.loc[train_index, ["img_path", "patient_id", "target"]].reset_index(drop=True)
+            val_df = df.loc[val_index, ["img_path", "patient_id", "target"]].reset_index(drop=True)
+
+        print(f"len train_df: {len(train_df)}\nlen val_df: {len(val_df)}")
+        return train_df, val_df
+
+
+    train_target_df, val_target_df = split_according_patients(target_df, 0.75, False)
+
+    def take_common_pationts(untarget_df, target_df):
+        '''
+        takes the patients that in untarget_df and target_df both.
+        :param untarget_df: target == 0
+        :param target_df: target == 1
+        :return: only the patients that in both df
+        '''
+        target_patients = target_df["patient_id"].unique()
+        untarget_df = untarget_df[untarget_df["patient_id"].isin(target_patients)]
+        return pd.concat((untarget_df, target_df), axis=0).reset_index(drop=True)
+
+    train_df = take_common_pationts(untarget_df, train_target_df)
+    val_df = take_common_pationts(untarget_df, val_target_df)
+
+    # under sampling
+    undersample = RandomUnderSampler(sampling_strategy={0: 10000, 1: len(train_target_df)}, random_state=42)
+    train_df, _ = undersample.fit_resample(train_df, train_df["target"])
+    train_df = train_df.reset_index(drop=True)
+    undersample = RandomUnderSampler(sampling_strategy={0: 10000, 1: len(val_target_df)}, random_state=42)
+    val_df, _ = undersample.fit_resample(val_df, val_df["target"])
+    val_df = val_df.reset_index(drop=True)
+
+    return train_df, val_df
+
+
+def get_std_mean():
+    '''
+    the function to calculate it is here
+    :return: (std: list, mean: list)
+    '''
+    std = [0.1386, 0.1308, 0.1202]
+    mean = [0.6298, 0.5126, 0.4097]
+    return std, mean
