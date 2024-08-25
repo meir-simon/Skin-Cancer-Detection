@@ -1,10 +1,38 @@
 import pandas as pd
+import numpy as np
 from sklearn.model_selection import GroupShuffleSplit
 from imblearn.under_sampling import NearMiss
 from imblearn.under_sampling import ClusterCentroids
 from imblearn.under_sampling import RandomUnderSampler
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import OneHotEncoder
+
+from data.column_names import cat_cols, feature_cols
+
+
+def preprocess(df_train, df_test, cat_cols):
+    feat_col = feature_cols.copy()
+
+    new_cat = []
+    for col in cat_cols:
+
+        col = [col] # make it a list 
+        encoder = OneHotEncoder(sparse_output=False, dtype=np.int32, handle_unknown='ignore')
+        encoder.fit(df_train[col])
+        
+        new_cat_cols = [f'{col[0]}_{i}' for i in range(len(encoder.get_feature_names_out()))]
+        new_cat.extend(new_cat_cols)
+
+        df_train[new_cat_cols] = encoder.transform(df_train[col])
+        df_train[new_cat_cols] = df_train[new_cat_cols].astype('category')
+
+        df_test[new_cat_cols] = encoder.transform(df_test[col])
+        df_test[new_cat_cols] = df_test[new_cat_cols].astype('category')
+
+        feat_col.remove(col[0])
+        feat_col.extend(new_cat_cols)
+    
+    return df_train, df_test, feat_col, new_cat
 
 
 def split_by_patients(train_data_frame, target_column='target', patient_column='patient_id', train_size=0.85, drop_columns=True):
