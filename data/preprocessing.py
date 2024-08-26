@@ -1,9 +1,39 @@
 import pandas as pd
+import numpy as np
 from sklearn.model_selection import GroupShuffleSplit
 from imblearn.under_sampling import NearMiss
 from imblearn.under_sampling import ClusterCentroids
 from imblearn.under_sampling import RandomUnderSampler
 from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import OneHotEncoder
+
+from data.column_names import cat_cols, feature_cols
+
+
+def preprocess(df_train, df_test, cat_cols):
+    feat_col = feature_cols.copy()
+
+    new_cat = []
+    for col in cat_cols:
+
+        col = [col] # make it a list 
+        encoder = OneHotEncoder(sparse_output=False, dtype=np.int32, handle_unknown='ignore')
+        encoder.fit(df_train[col])
+        
+        new_cat_cols = [f'{col[0]}_{i}' for i in range(len(encoder.get_feature_names_out()))]
+        new_cat.extend(new_cat_cols)
+
+        df_train[new_cat_cols] = encoder.transform(df_train[col])
+        df_train[new_cat_cols] = df_train[new_cat_cols].astype('category')
+
+        df_test[new_cat_cols] = encoder.transform(df_test[col])
+        df_test[new_cat_cols] = df_test[new_cat_cols].astype('category')
+
+        feat_col.remove(col[0])
+        feat_col.extend(new_cat_cols)
+    
+    return df_train, df_test, feat_col, new_cat
+
 
 def split_by_patients(train_data_frame, target_column='target', patient_column='patient_id', train_size=0.85, drop_columns=True):
     '''
@@ -36,7 +66,6 @@ def split_by_patients(train_data_frame, target_column='target', patient_column='
     print(f'Positives cases split: {train_positive_cases * 100 / original_positive_cases}, {100 - (train_positive_cases * 100 / original_positive_cases)}')
 
     return x_train, y_train, x_test, y_test
-
 
 
 # Function for Near Miss under sampling
@@ -79,10 +108,9 @@ def random_undersampling(x_train, y_train, sampling_strategy: dict):
     undersample = RandomUnderSampler(random_state=42, sampling_strategy = sampling_strategy)
     new_x_train, new_y_train = undersample.fit_resample(x_train, y_train)
     return new_x_train, new_y_train
-#encode categorical features
-from sklearn.preprocessing import OneHotEncoder
-import pandas as pd
 
+
+#encode categorical features
 def encode_and_concat(df, encoder, column_name):
     """
     Encodes a categorical column using OneHotEncoder and concatenates the encoded columns to the original DataFrame.
@@ -99,6 +127,7 @@ def encode_and_concat(df, encoder, column_name):
     updated_df = pd.concat([df, encoded_df], axis=1).drop(columns=[column_name])
     return updated_df, new_columns
 
+
 def add_column(df, name, fill):
     """
     Adds a new column to the DataFrame with a specified name and fill value.
@@ -111,6 +140,7 @@ def add_column(df, name, fill):
     df[name] = fill
     return df
 
+
 def sort_df(df, sort_function=lambda x: x):
     """
     Sorts the columns of a DataFrame according to a given sorting function.
@@ -121,6 +151,7 @@ def sort_df(df, sort_function=lambda x: x):
     """
     sorted_columns = sorted(df.columns, key=sort_function)
     return df[sorted_columns]
+
 
 def encode_and_fill_categorical_columns(*dfs, categorical_columns):
     """
@@ -155,6 +186,7 @@ def encode_and_fill_categorical_columns(*dfs, categorical_columns):
 #                                                                categorical_columns=categorical_columns_to_one_hot)
 # train_data, test_data, valid_data = all_dfs
 
+
 # המרת ערכים לפי חשיבות לסדר
 def ordinal_encoding(df, ordinal_features, value_mappings=None):
     if value_mappings is None:
@@ -176,7 +208,6 @@ def ordinal_encoding(df, ordinal_features, value_mappings=None):
             df[feature] = df[feature].map(value_mapping).fillna(0)
     
     return df, value_mappings
-
 
 # ordinal_columns = list()
 # train_data, value_mappings = ordinal_encoding(train_data, ordinal_columns)
@@ -207,6 +238,7 @@ def normalize_data(train_df, valid_df, test_df, numerical_features):
 # numerical_columns = ['An array of numeric columns or categories converted to numeric']
 
 # train_data, valid_data, test_data = normalize_data(train_data, valid_data, test_data, numerical_columns)
+initiate_dataset_10k_0
 
 import pandas as pd
 import os.path
