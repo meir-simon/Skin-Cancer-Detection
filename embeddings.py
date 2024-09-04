@@ -130,11 +130,12 @@ def create_embeddings_json(model_name, embeddings_list):
     headers = []
     for i in range(1, row_len + 1):
         headers.append(f"{model_name}_embedding{i}")
-    headers_and_embeddings = [headers] + embeddings_list
+    embeddings_list_python = [embedding.tolist() for embedding in embeddings_list]
+    headers_and_embeddings = [headers] + embeddings_list_python
     file_name = f"{model_name}_embeddings.json"
     with open(file_name, 'w') as file:
         json.dump(headers_and_embeddings, file)
-        return file_name
+    return file_name
 
 batch_size = 16
 image_paths = ISIC_df["img_path"].tolist()
