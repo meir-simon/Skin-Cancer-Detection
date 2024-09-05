@@ -125,17 +125,28 @@ def load_images_in_batches(image_paths, batch_size):
         batch_images = [load_and_transform_image(path) for path in batch_paths]
         yield batch_paths, batch_images
 
-def create_embeddings_json(model_name, embeddings_list):
+
+def create_embeddings_json(model_name, embeddings_list, batch_size=1000):
     row_len = len(embeddings_list[0])
-    headers = []
-    for i in range(1, row_len + 1):
-        headers.append(f"{model_name}_embedding{i}")
-    embeddings_list_python = [embedding.tolist() for embedding in embeddings_list]
-    headers_and_embeddings = [headers] + embeddings_list_python
+    headers = [f"{model_name}_embedding{i}" for i in range(1, row_len + 1)]
     file_name = f"{model_name}_embeddings.json"
+    
     with open(file_name, 'w') as file:
-        json.dump(headers_and_embeddings, file)
+        # Write headers as the first line
+        json.dump([headers], file)
+        file.write('\n')  # Adding a newline to separate headers from the data
+        
+        # Write embeddings in batches with tqdm for progress tracking
+        for i in tqdm(range(0, len(embeddings_list), batch_size), desc="Writing embeddings"):
+            batch_embeddings = embeddings_list[i:i + batch_size]
+            # Convert numpy arrays to lists
+            batch_embeddings_list = [embedding.tolist() for embedding in batch_embeddings]
+            json.dump(batch_embeddings_list, file)
+            file.write('\n')  # Separate batches with a newline
+
     return file_name
+
+
 
 batch_size = 16
 image_paths = ISIC_df["img_path"].tolist()
@@ -153,3 +164,12 @@ for batch_paths, batch_images in tqdm(load_images_in_batches(image_paths, batch_
 file_name = create_embeddings_json(model_name, embeddings_list)
 from google.colab import files
 files.download(file_name)
+
+
+#def read_embeddings_json(file_name):
+    # embeddings_list = []
+    # with open(file_name, 'r') as file:
+    #     headers = json.load(file)  # קריאת הכותרות
+    #     for line in file:
+    #         embeddings_list.extend(json.loads(line))  # קריאת והוספת קבוצות
+    # return headers, embeddings_list
