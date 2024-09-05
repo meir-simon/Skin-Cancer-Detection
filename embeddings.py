@@ -51,11 +51,11 @@ ISIC_df = ISIC_df[["isic_id"]]
 ISIC_df["img_path"] = ISIC_df["isic_id"].apply(lambda id: f"{os.path.join(IMG_DIR, id)}.jpg")
 ISIC_df.drop(["isic_id"], axis=1, inplace=True)
 
-if IN_KAGGLE:
-    ISIC_TEST_df = pd.read_csv(CSV_TEST_PATH)
-    ISIC_TEST_df = ISIC_df[["isic_id"]]
-    ISIC_TEST_df["img_path"] = ISIC_df["isic_id"].apply(lambda id: f"{os.path.join(IMG_TEST_DIR, id)}.jpg")
-    ISIC_TEST_df.drop(["isic_id"], axis=1, inplace=True)
+# if IN_KAGGLE:
+ISIC_TEST_df = pd.read_csv(CSV_TEST_PATH)
+ISIC_TEST_df = ISIC_df[["isic_id"]]
+ISIC_TEST_df["img_path"] = ISIC_df["isic_id"].apply(lambda id: f"{os.path.join(IMG_TEST_DIR, id)}.jpg")
+ISIC_TEST_df.drop(["isic_id"], axis=1, inplace=True)
 
 transform = v2.Compose([
     v2.Resize(IMG_SIZE),
@@ -170,13 +170,13 @@ image_paths = ISIC_df["img_path"].tolist()
 image_test_paths = ISIC_TEST_df["img_path"].tolist()
 embeddings_list = []
 embeddings_test_list = []
-path_and_list = [(ISIC_df,embeddings_list), (ISIC_TEST_df,embeddings_test_list)]
+path_and_list = [(image_path, embeddings_list), (image_test, embeddings_test_list)]
 # models = ['resnet18','resnet50','vgg16', 'efficientnet_b0', 'efficientnet_v2_m', 'mobilenet_v3_small', "vit_b_16"]
 model_name = 'vgg16'
 extractor = EmbeddingExtractor(model_name=model_name)
 # counter = 0
-for path_and_list in path_and_list:
-    image_paths, embeddings_list = path_and_list if IN_KAGGLE else image_paths, embeddings_list
+for path_list in path_and_list:
+    image_paths, embeddings_list = path_list
     for batch_paths, batch_images in tqdm(load_images_in_batches(image_paths, batch_size), total=len(image_paths) // batch_size, desc='Processing Images'):
         image_tensors = torch.stack(batch_images).to(device)  # Move image tensors to the appropriate device
         embeddings_batch = extractor.process_images(image_tensors)
