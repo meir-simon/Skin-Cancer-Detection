@@ -37,17 +37,25 @@ if IN_COLAB:
 elif IN_KAGGLE:
     IMG_DIR = "/kaggle/input/isic-2024-challenge/train-image/image"
     CSV_PATH = "/kaggle/input/isic-2024-challenge/train-metadata.csv"
+    IMG_TEST_DIR = "insert"
+    CSV_TEST_PATH = "INSERT"
 else:
     IMG_DIR = "/home/mefathim/Desktop/Skin-Cancer-Detection-with-3D-TBP/train-image/image"
     CSV_PATH = '/home/mefathim/Desktop/Skin-Cancer-Detection-with-3D-TBP/train-metadata.csv'
 
 IMG_SIZE = (50, 50)
-RANDOM_STATE = 40
+
 
 ISIC_df = pd.read_csv(CSV_PATH)
 ISIC_df = ISIC_df[["isic_id"]]
 ISIC_df["img_path"] = ISIC_df["isic_id"].apply(lambda id: f"{os.path.join(IMG_DIR, id)}.jpg")
 ISIC_df.drop(["isic_id"], axis=1, inplace=True)
+
+if IN_KAGGLE:
+    ISIC_TEST_df = pd.read_csv(CSV_TEST_PATH)
+    ISIC_TEST_df = ISIC_df[["isic_id"]]
+    ISIC_TEST_df["img_path"] = ISIC_df["isic_id"].apply(lambda id: f"{os.path.join(IMG_TEST_DIR, id)}.jpg")
+    ISIC_TEST_df.drop(["isic_id"], axis=1, inplace=True)
 
 transform = v2.Compose([
     v2.Resize(IMG_SIZE),
@@ -64,8 +72,8 @@ class EmbeddingExtractor(nn.Module):
     def __init__(self, model_name='resnet18'):
         super(EmbeddingExtractor, self).__init__()
         self.model_name = model_name
-        weights_path = os.path.join('prepared_weights', f'{model_name}.pth')
-        
+        weights_path = os.path.join('prepared_weights', f'{model_name}.pth') if not IN_KAGGLE else os.path.join('insert') 
+
         if model_name == 'resnet18':
             self.model = models.resnet18()
             self.model = torch.nn.Sequential(*list(self.model.children())[:-2])
@@ -137,7 +145,6 @@ def load_images_in_batches(image_paths, batch_size):
 
 
 def create_embeddings_json(model_name, embeddings_list, batch_size=1000):
-    row_len = len(embeddings_list[0])
     # headers = [f"{model_name}_embedding{i}" for i in range(1, row_len + 1)]
     file_name = f"{model_name}_embeddings.json"
     
@@ -160,19 +167,23 @@ def create_embeddings_json(model_name, embeddings_list, batch_size=1000):
 
 batch_size = 16
 image_paths = ISIC_df["img_path"].tolist()
-
+image_test_paths = ISIC_TEST_df["img_path"].tolist()
+embeddings_list = []
+embeddings_test_list = []
+path_and_list = [(ISIC_df,embeddings_list), (ISIC_TEST_df,embeddings_test_list)]
 # models = ['resnet18','resnet50','vgg16', 'efficientnet_b0', 'efficientnet_v2_m', 'mobilenet_v3_small', "vit_b_16"]
 model_name = 'vgg16'
 extractor = EmbeddingExtractor(model_name=model_name)
-counter = 0
-embeddings_list = []
-for batch_paths, batch_images in tqdm(load_images_in_batches(image_paths, batch_size), total=len(image_paths) // batch_size, desc='Processing Images'):
-    image_tensors = torch.stack(batch_images).to(device)  # Move image tensors to the appropriate device
-    embeddings_batch = extractor.process_images(image_tensors)
-    embeddings_list.extend(embeddings_batch)
-    counter+= 1
-    if counter == 5:    
-        break 
+# counter = 0
+for path_and_list in path_and_list:
+    image_paths, embeddings_list = path_and_list if IN_KAGGLE else image_paths, embeddings_list
+    for batch_paths, batch_images in tqdm(load_images_in_batches(image_paths, batch_size), total=len(image_paths) // batch_size, desc='Processing Images'):
+        image_tensors = torch.stack(batch_images).to(device)  # Move image tensors to the appropriate device
+        embeddings_batch = extractor.process_images(image_tensors)
+        embeddings_list.extend(embeddings_batch)
+        # counter+= 1
+        # if counter == 5:    
+        #     break 
 
 
 file_name = create_embeddings_json(model_name, embeddings_list)
